@@ -1,3 +1,7 @@
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/clip4clip-an-empirical-study-of-clip-for-end/video-retrieval-on-lsmdc)](https://paperswithcode.com/sota/video-retrieval-on-lsmdc?p=clip4clip-an-empirical-study-of-clip-for-end)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/clip4clip-an-empirical-study-of-clip-for-end/video-retrieval-on-msr-vtt-1ka)](https://paperswithcode.com/sota/video-retrieval-on-msr-vtt-1ka?p=clip4clip-an-empirical-study-of-clip-for-end)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/clip4clip-an-empirical-study-of-clip-for-end/video-retrieval-on-msvd)](https://paperswithcode.com/sota/video-retrieval-on-msvd?p=clip4clip-an-empirical-study-of-clip-for-end)
+
 The implementation of paper [**CLIP4Clip: An Empirical Study of CLIP for End to End Video Clip Retrieval**](https://arxiv.org/abs/2104.08860). 
 
 CLIP4Clip is a video-text retrieval model based on [CLIP (ViT-B/32)](https://github.com/openai/CLIP). We investigate three similarity calculation approaches: parameter-free type, sequential type, and tight type, in this work. The model achieve SOTA results on MSR-VTT, MSVC, and LSMDC.
