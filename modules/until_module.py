@@ -220,36 +220,6 @@ class MILNCELoss(nn.Module):
         sim_loss = new_logpt.masked_select(logpt_choice.to(dtype=self.bool_dtype)).mean()
         return sim_loss
 
-# class MILNCELoss(nn.Module):
-#     def __init__(self, batch_size=1, n_pair=1,):
-#         super(MILNCELoss, self).__init__()
-#         self.batch_size = batch_size
-#         self.n_pair = n_pair
-#         torch_v = float(".".join(torch.__version__.split(".")[:2]))
-#         self.bool_dtype = torch.bool if torch_v >= 1.3 else torch.uint8
-#
-#     def forward(self, sim_matrix):
-#         mm_mask = np.eye(self.batch_size)
-#         mm_mask = np.kron(mm_mask, np.ones((self.n_pair, self.n_pair)))
-#         mm_mask = torch.tensor(mm_mask).float().to(sim_matrix.device)
-#
-#         from_text_matrix = sim_matrix + mm_mask * -1e12
-#         from_video_matrix = sim_matrix.transpose(1, 0)
-#
-#         new_sim_matrix = torch.cat([from_video_matrix, from_text_matrix], dim=-1)
-#         logpt = F.log_softmax(new_sim_matrix, dim=-1)
-#
-#         mm_mask_logpt = torch.cat([mm_mask, torch.zeros_like(mm_mask)], dim=-1)
-#         masked_logpt = logpt + (torch.ones_like(mm_mask_logpt) - mm_mask_logpt) * -1e12
-#
-#         new_logpt = -torch.logsumexp(masked_logpt, dim=-1)
-#
-#         logpt_choice = torch.zeros_like(new_logpt)
-#         mark_ind = torch.arange(self.batch_size).to(sim_matrix.device) * self.n_pair + (self.n_pair//2)
-#         logpt_choice[mark_ind] = 1
-#         sim_loss = new_logpt.masked_select(logpt_choice.to(dtype=self.bool_dtype)).mean()
-#         return sim_loss
-
 class MaxMarginRankingLoss(nn.Module):
     def __init__(self,
                  margin=1.0,
@@ -280,21 +250,6 @@ class MaxMarginRankingLoss(nn.Module):
             max_margin = max_margin * self.mm_mask.to(max_margin.device)
         return max_margin.mean()
 
-def context_mask(n, l):
-    """
-    :param n: n pair
-    :param l: l-gram
-    :return:
-    n = 3, l = 1
-    [[0. 1. 0.]
-     [1. 0. 1.]
-     [0. 1. 0.]]
-    """
-    u = 1 - np.tri(n, k=l)
-    b = np.tri(n, k=-l - 1)
-    f = np.ones((n, n)) - u - b - np.eye(n)
-    return f
-
 class AllGather(torch.autograd.Function):
     """An autograd function that performs allgather on a tensor."""
 
@@ -312,77 +267,3 @@ class AllGather(torch.autograd.Function):
             grad_output[ctx.batch_size * ctx.rank : ctx.batch_size * (ctx.rank + 1)],
             None,
         )
-
-class SkipGramLoss(nn.Module):
-    def __init__(self, batch_size=1, n_pair=1, neighber=1):
-        super(SkipGramLoss, self).__init__()
-        self.batch_size = batch_size
-        self.n_pair = n_pair
-
-        assert neighber > 0
-        neighber_mask = context_mask(self.n_pair, neighber)
-        mm_mask = np.eye(self.batch_size)
-        mm_mask = np.kron(mm_mask, neighber_mask)
-        self.mm_mask = torch.tensor(mm_mask).float()
-        self.eye_mask = torch.tensor(np.eye(self.batch_size * self.n_pair)).float()
-
-        torch_v = float(".".join(torch.__version__.split(".")[:2]))
-        self.bool_dtype = torch.bool if torch_v >= 1.3 else torch.uint8
-
-    def forward(self, sim_matrix):
-        mm_mask = self.mm_mask.to(sim_matrix.device)
-        eye_mask = self.eye_mask.to(sim_matrix.device)
-
-        sim_matrix = sim_matrix + eye_mask * -1e12
-        logpt = F.log_softmax(sim_matrix, dim=-1)
-
-        masked_logpt = logpt + (torch.ones_like(mm_mask) - mm_mask) * -1e12
-
-        new_logpt = -torch.logsumexp(masked_logpt, dim=-1)
-
-        sim_loss = new_logpt.mean()
-        return sim_loss
-
-class CbowLoss(nn.Module):
-    def __init__(self, batch_size=1, n_pair=1, neighber=1):
-        super(CbowLoss, self).__init__()
-        self.batch_size = batch_size
-        self.n_pair = n_pair
-
-        assert neighber > 0
-        neighber_mask = context_mask(self.n_pair, neighber)
-        self.cal_mask = torch.tensor(np.kron(np.eye(self.batch_size), neighber_mask)).float()
-
-        # shape: batch x npair x npair x 1
-        self.mm_mask = torch.tensor(neighber_mask).float().unsqueeze(0).expand(self.batch_size, -1, -1).unsqueeze(-1)
-        self.mm_mask_len = torch.sum(self.mm_mask.squeeze(-1), dim=-1, keepdim=True).float()
-
-        self.eye_mask = torch.tensor(np.eye(self.batch_size * self.n_pair)).float()
-
-        torch_v = float(".".join(torch.__version__.split(".")[:2]))
-        self.bool_dtype = torch.bool if torch_v >= 1.3 else torch.uint8
-
-    def forward(self, pool_feature):
-        """
-        :param pool_feature: shape (batch x npair, hidden_size)
-        :return:
-        """
-        mm_mask = self.mm_mask.to(pool_feature.device)
-        mm_mask_len = self.mm_mask_len.to(pool_feature.device)
-        cal_mask = self.cal_mask.to(pool_feature.device)
-        eye_mask = self.eye_mask.to(pool_feature.device)
-
-        context_feature = pool_feature.view(self.batch_size, self.n_pair, pool_feature.size(-1))
-        context_feature = torch.mul(context_feature.unsqueeze(1).expand(-1, self.n_pair, -1, -1), mm_mask)
-        context_feature = torch.sum(context_feature, dim=2) / mm_mask_len
-        sim_matrix = torch.matmul(pool_feature, context_feature.view(-1, pool_feature.size(-1)).t())
-
-        sim_matrix = sim_matrix + cal_mask * -1e12
-        logpt = F.log_softmax(sim_matrix, dim=-1)
-
-        masked_logpt = logpt + (torch.ones_like(cal_mask) - eye_mask) * -1e12
-
-        new_logpt = -torch.logsumexp(masked_logpt, dim=-1)
-
-        sim_loss = new_logpt.mean()
-        return sim_loss
