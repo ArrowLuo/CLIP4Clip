@@ -121,7 +121,7 @@ class MSRVTT_DataLoader(Dataset):
                 else:
                     video[i][:slice_len, ...] = video_slice
             else:
-                print("get raw video error, skip it.")
+                print("video path: {} error. video id: {}".format(video_path, video_id))
 
         for i, v_length in enumerate(max_video_length):
             video_mask[i][:v_length] = [1] * v_length
