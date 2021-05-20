@@ -188,21 +188,21 @@ def prep_optimizer(args, model, num_train_optimization_steps, device, n_gpu, loc
     param_optimizer = list(model.named_parameters())
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
 
-    no_decay_param_tp = [(n, p) for n, p in param_optimizer if not any(nd in n for nd in no_decay)]
-    decay_param_tp = [(n, p) for n, p in param_optimizer if any(nd in n for nd in no_decay)]
+    decay_param_tp = [(n, p) for n, p in param_optimizer if not any(nd in n for nd in no_decay)]
+    no_decay_param_tp = [(n, p) for n, p in param_optimizer if any(nd in n for nd in no_decay)]
 
-    no_decay_bert_param_tp = [(n, p) for n, p in no_decay_param_tp if "clip." in n]
-    no_decay_nobert_param_tp = [(n, p) for n, p in no_decay_param_tp if "clip." not in n]
+    decay_clip_param_tp = [(n, p) for n, p in decay_param_tp if "clip." in n]
+    decay_noclip_param_tp = [(n, p) for n, p in decay_param_tp if "clip." not in n]
 
-    decay_bert_param_tp = [(n, p) for n, p in decay_param_tp if "clip." in n]
-    decay_nobert_param_tp = [(n, p) for n, p in decay_param_tp if "clip." not in n]
+    no_decay_clip_param_tp = [(n, p) for n, p in no_decay_param_tp if "clip." in n]
+    no_decay_noclip_param_tp = [(n, p) for n, p in no_decay_param_tp if "clip." not in n]
 
     weight_decay = 0.2
     optimizer_grouped_parameters = [
-        {'params': [p for n, p in no_decay_bert_param_tp], 'weight_decay': weight_decay, 'lr': args.lr * coef_lr},
-        {'params': [p for n, p in no_decay_nobert_param_tp], 'weight_decay': weight_decay},
-        {'params': [p for n, p in decay_bert_param_tp], 'weight_decay': 0.0, 'lr': args.lr * coef_lr},
-        {'params': [p for n, p in decay_nobert_param_tp], 'weight_decay': 0.0}
+        {'params': [p for n, p in decay_clip_param_tp], 'weight_decay': weight_decay, 'lr': args.lr * coef_lr},
+        {'params': [p for n, p in decay_noclip_param_tp], 'weight_decay': weight_decay},
+        {'params': [p for n, p in no_decay_clip_param_tp], 'weight_decay': 0.0, 'lr': args.lr * coef_lr},
+        {'params': [p for n, p in no_decay_noclip_param_tp], 'weight_decay': 0.0}
     ]
 
     scheduler = None
