@@ -2,7 +2,7 @@
 
 The implementation of paper [**CLIP4Clip: An Empirical Study of CLIP for End to End Video Clip Retrieval**](https://arxiv.org/abs/2104.08860). 
 
-CLIP4Clip is a video-text retrieval model based on [CLIP (ViT-B/32)](https://github.com/openai/CLIP). We investigate three similarity calculation approaches: parameter-free type, sequential type, and tight type, in this work. The model achieve SOTA results on MSR-VTT, MSVC, and LSMDC.
+CLIP4Clip is a video-text retrieval model based on [CLIP (ViT-B/32)](https://github.com/openai/CLIP). We investigate three similarity calculation approaches: parameter-free type, sequential type, and tight type, in this work. The model achieve SOTA results on MSR-VTT, MSVC, LSMDC, ActivityNet, and DiDeMo.
 
 ![CLIP4Clip](CLIP4Clip.png)
 
@@ -39,6 +39,11 @@ wget https://github.com/ArrowLuo/CLIP4Clip/releases/download/v0.0/msvd_data.zip
 You must obtain permission from MPII to download and use the data. The download link is [here](https://sites.google.com/site/describingmovies/download).
 The 1000 test clips data is [link](http://www.google.com/url?q=http%3A%2F%2Fdatasets.d2.mpi-inf.mpg.de%2FmovieDescription%2Fprotected%2Flsmdc2016%2FLSMDC16_challenge_1000_publictect.csv&sa=D&sntz=1&usg=AFQjCNGIaGVhCeb6zNfUs2UL1zNzoEtaSg). Read our paper and the [dataloader](./dataloaders/dataloader_lsmdc_retrieval.py) for more information.
 
+## Compress Video for Speed-up (optional)
+```
+python preprocess/compress_video.py --input_root [raw_video_path] --output_root [compressed_video_path]
+```
+This script will compress the video to *3fps* with width *224* (or height *224*). Modify the variables for your customization.
 
 ## How to Run 
 
