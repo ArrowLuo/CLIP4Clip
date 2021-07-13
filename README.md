@@ -7,8 +7,8 @@ CLIP4Clip is a video-text retrieval model based on [CLIP (ViT-B/32)](https://git
 ![CLIP4Clip](CLIP4Clip.png)
 
 ## Requirement
-```
-# From CLIP 
+```sh
+# From CLIP
 conda install --yes -c pytorch pytorch=1.7.1 torchvision cudatoolkit=11.0
 pip install ftfy regex tqdm
 pip install opencv-python boto3 requests pandas
@@ -21,7 +21,7 @@ pip install opencv-python boto3 requests pandas
 The official data and video links can be found in [link](http://ms-multimedia-challenge.com/2017/dataset). 
 
 For the convenience, you can also download the splits and captions by,
-```
+```sh
 wget https://github.com/ArrowLuo/CLIP4Clip/releases/download/v0.0/msrvtt_data.zip
 ```
 
@@ -30,7 +30,7 @@ wget https://github.com/ArrowLuo/CLIP4Clip/releases/download/v0.0/msrvtt_data.zi
 Raw videos can be download from [link](https://www.cs.utexas.edu/users/ml/clamp/videoDescription/). 
 
 The splits and `raw_captions` can be found in the wonderful job [collaborative-experts](https://github.com/albanie/collaborative-experts/blob/master/misc/datasets/msvd/README.md). For the convenience, you can also download them by,
-```
+```sh
 wget https://github.com/ArrowLuo/CLIP4Clip/releases/download/v0.0/msvd_data.zip
 ```
 
@@ -40,7 +40,7 @@ You must obtain permission from MPII to download and use the data. The download 
 The 1000 test clips data is [link](http://www.google.com/url?q=http%3A%2F%2Fdatasets.d2.mpi-inf.mpg.de%2FmovieDescription%2Fprotected%2Flsmdc2016%2FLSMDC16_challenge_1000_publictect.csv&sa=D&sntz=1&usg=AFQjCNGIaGVhCeb6zNfUs2UL1zNzoEtaSg). Read our paper and the [dataloader](./dataloaders/dataloader_lsmdc_retrieval.py) for more information.
 
 ## Compress Video for Speed-up (optional)
-```
+```sh
 python preprocess/compress_video.py --input_root [raw_video_path] --output_root [compressed_video_path]
 ```
 This script will compress the video to *3fps* with width *224* (or height *224*). Modify the variables for your customization.
@@ -56,14 +56,14 @@ This script will compress the video to *3fps* with width *224* (or height *224*)
 read our paper for more details on `--linear_patch` and `--sim_header`. Test more hyperparameters for better performance. 
 
 Download CLIP (ViT-B/32) weight,
-```
- wget -P ./modules https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt
+```sh
+wget -P ./modules https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt
 ```
 Then, run
 
 ### MSRVTT
 
-```
+```sh
 DATA_PATH=[Your MSRVTT data and videos path]
 python -m torch.distributed.launch --nproc_per_node=4 \
 main_task_retrieval.py --do_train --num_thread_reader=0 \
@@ -81,7 +81,7 @@ main_task_retrieval.py --do_train --num_thread_reader=0 \
 ```
 
 ### MSVD
-```
+```sh
 DATA_PATH=[Your MSVD data and videos path]
 python -m torch.distributed.launch --nproc_per_node=4 \
 main_task_retrieval.py --do_train --num_thread_reader=2 \
@@ -97,7 +97,7 @@ main_task_retrieval.py --do_train --num_thread_reader=2 \
 ```
 
 ### LSMDC
-```
+```sh
 DATA_PATH=[Your LSMDC data and videos path]
 python -m torch.distributed.launch --nproc_per_node=4 \
 main_task_retrieval.py --do_train --num_thread_reader=2 \
@@ -113,7 +113,7 @@ main_task_retrieval.py --do_train --num_thread_reader=2 \
 
 # Citation
 If you find CLIP4Clip useful in your work, you can cite the following paper:
-```
+```bibtex
 @Article{Luo2021CLIP4Clip,
   author  = {Huaishao Luo and Lei Ji and Ming Zhong and Yang Chen and Wen Lei and Nan Duan and Tianrui Li},
   title   = {CLIP4Clip: An Empirical Study of CLIP for End to End Video Clip Retrieval},
