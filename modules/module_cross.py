@@ -108,7 +108,7 @@ class ResidualAttentionBlock(nn.Module):
         self.n_head = n_head
 
     def attention(self, x: torch.Tensor, attn_mask: torch.Tensor):
-        attn_mask_ = attn_mask.repeat(self.n_head, 1, 1)
+        attn_mask_ = attn_mask.repeat_interleave(self.n_head, dim=0)
         return self.attn(x, x, x, need_weights=False, attn_mask=attn_mask_)[0]
 
     def forward(self, para_tuple: tuple):
