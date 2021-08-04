@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 from __future__ import print_function
 
 import torch
-from torch.utils.data import (SequentialSampler)
 import numpy as np
 import random
 import os
@@ -15,12 +14,10 @@ from modules.tokenization_clip import SimpleTokenizer as ClipTokenizer
 from modules.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
 from modules.modeling import CLIP4Clip
 from modules.optimization import BertAdam
-from torch.utils.data import DataLoader
+
 from util import parallel_apply, get_logger
-from dataloaders.dataloader_msrvtt_retrieval import MSRVTT_DataLoader
-from dataloaders.dataloader_msrvtt_retrieval import MSRVTT_TrainDataLoader
-from dataloaders.dataloader_msvd_retrieval import MSVD_DataLoader
-from dataloaders.dataloader_lsmdc_retrieval import LSMDC_DataLoader
+from dataloaders.data_dataloaders import DATALOADER_DICT
+
 torch.distributed.init_process_group(backend="nccl")
 
 global logger
@@ -103,6 +100,8 @@ def get_args(description='CLIP4Clip on Retrieval Task'):
     parser.add_argument('--sim_header', type=str, default="meanP",
                         choices=["meanP", "seqLSTM", "seqTransf", "tightTransf"],
                         help="choice a similarity header.")
+
+    parser.add_argument("--pretrained_clip_name", default="ViT-B/32", type=str, help="Choose a CLIP version")
 
     args = parser.parse_args()
 
@@ -215,150 +214,6 @@ def prep_optimizer(args, model, num_train_optimization_steps, device, n_gpu, loc
                                                       output_device=local_rank, find_unused_parameters=True)
 
     return optimizer, scheduler, model
-
-def dataloader_msrvtt_train(args, tokenizer):
-    msrvtt_dataset = MSRVTT_TrainDataLoader(
-        csv_path=args.train_csv,
-        json_path=args.data_path,
-        features_path=args.features_path,
-        max_words=args.max_words,
-        feature_framerate=args.feature_framerate,
-        tokenizer=tokenizer,
-        max_frames=args.max_frames,
-        unfold_sentences=args.expand_msrvtt_sentences,
-        frame_order=args.train_frame_order,
-        slice_framepos=args.slice_framepos,
-    )
-
-    train_sampler = torch.utils.data.distributed.DistributedSampler(msrvtt_dataset)
-    dataloader = DataLoader(
-        msrvtt_dataset,
-        batch_size=args.batch_size // args.n_gpu,
-        num_workers=args.num_thread_reader,
-        pin_memory=False,
-        shuffle=(train_sampler is None),
-        sampler=train_sampler,
-        drop_last=True,
-    )
-
-    return dataloader, len(msrvtt_dataset), train_sampler
-
-def dataloader_msrvtt_test(args, tokenizer):
-    msrvtt_testset = MSRVTT_DataLoader(
-        csv_path=args.val_csv,
-        features_path=args.features_path,
-        max_words=args.max_words,
-        feature_framerate=args.feature_framerate,
-        tokenizer=tokenizer,
-        max_frames=args.max_frames,
-        frame_order=args.eval_frame_order,
-        slice_framepos=args.slice_framepos,
-    )
-    dataloader_msrvtt = DataLoader(
-        msrvtt_testset,
-        batch_size=args.batch_size_val,
-        num_workers=args.num_thread_reader,
-        shuffle=False,
-        drop_last=False,
-    )
-    return dataloader_msrvtt, len(msrvtt_testset)
-
-
-def dataloader_msvd_train(args, tokenizer):
-    msvd_dataset = MSVD_DataLoader(
-        subset="train",
-        data_path=args.data_path,
-        features_path=args.features_path,
-        max_words=args.max_words,
-        feature_framerate=args.feature_framerate,
-        tokenizer=tokenizer,
-        max_frames=args.max_frames,
-        frame_order=args.train_frame_order,
-        slice_framepos=args.slice_framepos,
-    )
-
-    train_sampler = torch.utils.data.distributed.DistributedSampler(msvd_dataset)
-    dataloader = DataLoader(
-        msvd_dataset,
-        batch_size=args.batch_size // args.n_gpu,
-        num_workers=args.num_thread_reader,
-        pin_memory=False,
-        shuffle=(train_sampler is None),
-        sampler=train_sampler,
-        drop_last=True,
-    )
-
-    return dataloader, len(msvd_dataset), train_sampler
-
-def dataloader_msvd_test(args, tokenizer, subset="test"):
-    msvd_testset = MSVD_DataLoader(
-        subset=subset,
-        data_path=args.data_path,
-        features_path=args.features_path,
-        max_words=args.max_words,
-        feature_framerate=args.feature_framerate,
-        tokenizer=tokenizer,
-        max_frames=args.max_frames,
-        frame_order=args.eval_frame_order,
-        slice_framepos=args.slice_framepos,
-    )
-    dataloader_msrvtt = DataLoader(
-        msvd_testset,
-        batch_size=args.batch_size_val,
-        num_workers=args.num_thread_reader,
-        shuffle=False,
-        drop_last=False,
-    )
-    return dataloader_msrvtt, len(msvd_testset)
-
-
-def dataloader_lsmdc_train(args, tokenizer):
-    lsmdc_dataset = LSMDC_DataLoader(
-        subset="train",
-        data_path=args.data_path,
-        features_path=args.features_path,
-        max_words=args.max_words,
-        feature_framerate=args.feature_framerate,
-        tokenizer=tokenizer,
-        max_frames=args.max_frames,
-        frame_order=args.train_frame_order,
-        slice_framepos=args.slice_framepos,
-    )
-
-    train_sampler = torch.utils.data.distributed.DistributedSampler(lsmdc_dataset)
-    dataloader = DataLoader(
-        lsmdc_dataset,
-        batch_size=args.batch_size // args.n_gpu,
-        num_workers=args.num_thread_reader,
-        pin_memory=False,
-        shuffle=(train_sampler is None),
-        sampler=train_sampler,
-        drop_last=True,
-    )
-
-    return dataloader, len(lsmdc_dataset), train_sampler
-
-def dataloader_lsmdc_test(args, tokenizer, subset="test"):
-    lsmdc_testset = LSMDC_DataLoader(
-        subset=subset,
-        data_path=args.data_path,
-        features_path=args.features_path,
-        max_words=args.max_words,
-        feature_framerate=args.feature_framerate,
-        tokenizer=tokenizer,
-        max_frames=args.max_frames,
-        frame_order=args.eval_frame_order,
-        slice_framepos=args.slice_framepos,
-    )
-    dataloader_msrvtt = DataLoader(
-        lsmdc_testset,
-        batch_size=args.batch_size_val,
-        num_workers=args.num_thread_reader,
-        shuffle=False,
-        drop_last=False,
-    )
-    return dataloader_msrvtt, len(lsmdc_testset)
-
 
 def save_model(epoch, args, model, type_name=""):
     # Only save the model it-self
@@ -594,11 +449,6 @@ def eval_epoch(args, model, test_dataloader, device, n_gpu):
     R1 = tv_metrics['R1']
     return R1
 
-DATALOADER_DICT = {}
-DATALOADER_DICT["msrvtt"] = {"train":dataloader_msrvtt_train, "val":None, "test":dataloader_msrvtt_test}
-DATALOADER_DICT["msvd"] = {"train":dataloader_msvd_train, "val":dataloader_msvd_test, "test":dataloader_msvd_test}
-DATALOADER_DICT["lsmdc"] = {"train":dataloader_lsmdc_train, "val":dataloader_lsmdc_test, "test":dataloader_lsmdc_test}
-
 def main():
     global logger
     args = get_args()
@@ -631,13 +481,26 @@ def main():
                 # paramenters which < freeze_layer_num will be freezed
                 param.requires_grad = False
 
+    ## ####################################
+    # dataloader loading
+    ## ####################################
     assert args.datatype in DATALOADER_DICT
-    test_dataloader, test_length = DATALOADER_DICT[args.datatype]["test"](args, tokenizer)
+
+    assert DATALOADER_DICT[args.datatype]["test"] is not None \
+           or DATALOADER_DICT[args.datatype]["val"] is not None
+
+    test_dataloader, test_length = None, 0
+    if DATALOADER_DICT[args.datatype]["test"] is not None:
+        test_dataloader, test_length = DATALOADER_DICT[args.datatype]["test"](args, tokenizer)
 
     if DATALOADER_DICT[args.datatype]["val"] is not None:
         val_dataloader, val_length = DATALOADER_DICT[args.datatype]["val"](args, tokenizer, subset="val")
     else:
         val_dataloader, val_length = test_dataloader, test_length
+
+    ## report validation results if the ["test"] is None
+    if test_dataloader is None:
+        test_dataloader, test_length = val_dataloader, val_length
 
     if args.local_rank == 0:
         logger.info("***** Running test *****")
@@ -647,6 +510,9 @@ def main():
         logger.info("***** Running val *****")
         logger.info("  Num examples = %d", val_length)
 
+    ## ####################################
+    # train and eval
+    ## ####################################
     if args.do_train:
         train_dataloader, train_length, train_sampler = DATALOADER_DICT[args.datatype]["train"](args, tokenizer)
         num_train_optimization_steps = (int(len(train_dataloader) + args.gradient_accumulation_steps - 1)

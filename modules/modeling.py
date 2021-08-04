@@ -38,7 +38,10 @@ class CLIP4ClipPreTrainedModel(PreTrainedModel, nn.Module):
                 task_config.local_rank = 0
 
         if state_dict is None: state_dict = {}
-        clip_state_dict = CLIP.get_config(pretrained_clip_name="ViT-B/32")
+        pretrained_clip_name = "ViT-B/32"
+        if hasattr(task_config, 'pretrained_clip_name'):
+            pretrained_clip_name = task_config.pretrained_clip_name
+        clip_state_dict = CLIP.get_config(pretrained_clip_name=pretrained_clip_name)
         for key, val in clip_state_dict.items():
             new_key = "clip." + key
             if new_key not in state_dict:

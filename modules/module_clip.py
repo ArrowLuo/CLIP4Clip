@@ -19,7 +19,17 @@ _MODELS = {
     "RN50": "https://openaipublic.azureedge.net/clip/models/afeb0e10f9e5a86da6080e35cf09123aca3b358a0c3e3b6c78a7b63bc04b6762/RN50.pt",
     "RN101": "https://openaipublic.azureedge.net/clip/models/8fa8567bab74a42d41c5915025a8e4538c3bdbe8804a470a72f30b0d94fab599/RN101.pt",
     "RN50x4": "https://openaipublic.azureedge.net/clip/models/7e526bd135e493cef0776de27d5f42653e6b4c8bf9e0f653bb11773263205fdd/RN50x4.pt",
+    "RN50x16": "https://openaipublic.azureedge.net/clip/models/52378b407f34354e150460fe41077663dd5b39c54cd0bfd2b27167a4a06ec9aa/RN50x16.pt",
     "ViT-B/32": "https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt",
+    "ViT-B/16": "https://openaipublic.azureedge.net/clip/models/5806e77cd80f8b59890b7e101eabd078d9fb84e6937f9e85e4ecb61988df416f/ViT-B-16.pt",
+}
+_PT_NAME = {
+    "RN50": "RN50.pt",
+    "RN101": "RN101.pt",
+    "RN50x4": "RN50x4.pt",
+    "RN50x16": "RN50x16.pt",
+    "ViT-B/32": "ViT-B-32.pt",
+    "ViT-B/16": "ViT-B-16.pt",
 }
 
 def _download(url: str, root: str = os.path.expanduser("~/.cache/clip")):
@@ -403,7 +413,10 @@ class CLIP(nn.Module):
     @staticmethod
     def get_config(pretrained_clip_name="ViT-B/32"):
         model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ViT-B-32.pt")
-        if pretrained_clip_name == "ViT-B/32" and os.path.exists(model_path):
+        if pretrained_clip_name in _MODELS and pretrained_clip_name in _PT_NAME:
+            model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), _PT_NAME[pretrained_clip_name])
+
+        if pretrained_clip_name in ["ViT-B/32", "ViT-B/16"] and os.path.exists(model_path):
             pass
         else:
             if pretrained_clip_name in _MODELS:

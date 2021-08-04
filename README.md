@@ -1,8 +1,12 @@
 # CLIP4Clip: An Empirical Study of CLIP for End to End Video Clip Retrieval
 
+(**July 28, 2021**) Add ViT-B/16 with an extra `--pretrained_clip_name`
+
+(**Apr. 22, 2021**) First version 
+
 The implementation of paper [**CLIP4Clip: An Empirical Study of CLIP for End to End Video Clip Retrieval**](https://arxiv.org/abs/2104.08860). 
 
-CLIP4Clip is a video-text retrieval model based on [CLIP (ViT-B/32)](https://github.com/openai/CLIP). We investigate three similarity calculation approaches: parameter-free type, sequential type, and tight type, in this work. The model achieve SOTA results on MSR-VTT, MSVC, LSMDC, ActivityNet, and DiDeMo.
+CLIP4Clip is a video-text retrieval model based on [CLIP (ViT-B)](https://github.com/openai/CLIP). We investigate three similarity calculation approaches: parameter-free type, sequential type, and tight type, in this work. The model achieve SOTA results on MSR-VTT, MSVC, LSMDC, ActivityNet, and DiDeMo.
 
 ![CLIP4Clip](CLIP4Clip.png)
 
@@ -52,6 +56,8 @@ This script will compress the video to *3fps* with width *224* (or height *224*)
 >`--linear_patch` can be set with `2d` or `3d`
 > 
 > `--sim_header` can be set with `meanP`, `seqLSTM`, `seqTransf`, or `tightTransf`
+> 
+> `--pretrained_clip_name` can be set with `ViT-B/32` or `ViT-B/16`
 
 read our paper for more details on `--linear_patch` and `--sim_header`. Test more hyperparameters for better performance. 
 
@@ -59,7 +65,15 @@ Download CLIP (ViT-B/32) weight,
 ```sh
 wget -P ./modules https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt
 ```
+or, download CLIP (ViT-B/16) weight,
+```sh
+wget -P ./modules https://openaipublic.azureedge.net/clip/models/5806e77cd80f8b59890b7e101eabd078d9fb84e6937f9e85e4ecb61988df416f/ViT-B-16.pt
+```
+
 Then, run
+
+
+*The CLIP (ViT-B/32) is the default setting in the paper, replacing with the ViT-B/16 for better performance.*
 
 ### MSRVTT
 
@@ -77,7 +91,8 @@ main_task_retrieval.py --do_train --num_thread_reader=0 \
 --datatype msrvtt --expand_msrvtt_sentences  \
 --feature_framerate 1 --coef_lr 1e-3 \
 --freeze_layer_num 0  --slice_framepos 2 \
---loose_type --linear_patch 2d --sim_header meanP
+--loose_type --linear_patch 2d --sim_header meanP \
+--pretrained_clip_name ViT-B/32
 ```
 
 ### MSVD
@@ -93,7 +108,8 @@ main_task_retrieval.py --do_train --num_thread_reader=2 \
 --datatype msvd \
 --feature_framerate 1 --coef_lr 1e-3 \
 --freeze_layer_num 0 --slice_framepos 2 \
---loose_type --linear_patch 2d --sim_header meanP
+--loose_type --linear_patch 2d --sim_header meanP \
+--pretrained_clip_name ViT-B/32
 ```
 
 ### LSMDC
@@ -108,7 +124,42 @@ main_task_retrieval.py --do_train --num_thread_reader=2 \
 --lr 1e-4 --max_words 32 --max_frames 12 --batch_size_val 16 \
 --datatype lsmdc --feature_framerate 1 --coef_lr 1e-3 \
 --freeze_layer_num 0  --slice_framepos 2 \
---loose_type --linear_patch 2d --sim_header meanP
+--loose_type --linear_patch 2d --sim_header meanP \
+--pretrained_clip_name ViT-B/32
+```
+
+### ActivityNet
+ActivityNet is regarded as video-paragraph retrieval in our setting, thus, need more GPUs (or run with multi-node).
+```sh
+DATA_PATH=[Your ActivityNet data and videos path]
+python -m torch.distributed.launch --nproc_per_node=8 \
+main_task_retrieval.py --do_train --num_thread_reader=2 \
+--epochs=5 --batch_size=128 --n_display=50 \
+--data_path ${DATA_PATH} \
+--features_path ${DATA_PATH}/Activity_Videos \
+--output_dir ckpts/ckpt_activity_retrieval_looseType \
+--lr 1e-4 --max_words 64 --max_frames 64 --batch_size_val 16 \
+--datatype activity --feature_framerate 1 --coef_lr 1e-3 \
+--freeze_layer_num 0  --slice_framepos 2 \
+--loose_type --linear_patch 2d --sim_header meanP \
+--pretrained_clip_name ViT-B/32
+```
+
+### DiDeMo
+DiDeMo is regarded as video-paragraph retrieval in our setting, thus, need more GPUs (or run with multi-node).
+```sh
+DATA_PATH=[Your DiDeMo data and videos path]
+python -m torch.distributed.launch --nproc_per_node=8 \
+main_task_retrieval.py --do_train --num_thread_reader=2 \
+--epochs=5 --batch_size=128 --n_display=50 \
+--data_path ${DATA_PATH} \
+--features_path ${DATA_PATH}/DiDeMo_Videos \
+--output_dir ckpts/ckpt_didemo_retrieval_looseType \
+--lr 1e-4 --max_words 64 --max_frames 64 --batch_size_val 16 \
+--datatype didemo --feature_framerate 1 --coef_lr 1e-3 \
+--freeze_layer_num 0  --slice_framepos 2 \
+--loose_type --linear_patch 2d --sim_header meanP \
+--pretrained_clip_name ViT-B/32
 ```
 
 # Citation
@@ -123,4 +174,4 @@ If you find CLIP4Clip useful in your work, you can cite the following paper:
 ```
 
 # Acknowledgments
-Our code is based on [CLIP (ViT-B/32)](https://github.com/openai/CLIP) and [UniVL](https://github.com/microsoft/UniVL).
+Our code is based on [CLIP](https://github.com/openai/CLIP) and [UniVL](https://github.com/microsoft/UniVL).
