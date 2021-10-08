@@ -42,7 +42,7 @@ def prepare_input_output_pairs(input_root, output_root):
         for file_name in files:
             input_video_path = os.path.join(root, file_name)
             output_video_path = os.path.join(output_root, file_name)
-            if os.path.exists(output_video_path):
+            if os.path.exists(output_video_path) and os.path.getsize(output_video_path) > 0:
                 pass
             else:
                 input_video_path_list.append(input_video_path)
@@ -77,3 +77,9 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
 
+    print("Compress finished, wait for checking files...")
+    for input_video_path, output_video_path in zip(input_video_path_list, output_video_path_list):
+        if os.path.exists(input_video_path):
+            if os.path.exists(output_video_path) is False or os.path.getsize(output_video_path) < 1.:
+                shutil.copyfile(input_video_path, output_video_path)
+                print("Copy and replace file: {}".format(output_video_path))
