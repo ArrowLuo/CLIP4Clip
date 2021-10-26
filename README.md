@@ -171,7 +171,7 @@ If you find CLIP4Clip useful in your work, you can cite the following paper:
 ```bibtex
 @Article{Luo2021CLIP4Clip,
   author  = {Huaishao Luo and Lei Ji and Ming Zhong and Yang Chen and Wen Lei and Nan Duan and Tianrui Li},
-  title   = {CLIP4Clip: An Empirical Study of CLIP for End to End Video Clip Retrieval},
+  title   = {{CLIP4Clip}: An Empirical Study of CLIP for End to End Video Clip Retrieval},
   journal = {arXiv preprint arXiv:2104.08860},
   year    = {2021},
 }
