@@ -175,8 +175,6 @@ def init_model(args, device, n_gpu, local_rank):
     # Prepare model
     cache_dir = args.cache_dir if args.cache_dir else os.path.join(str(PYTORCH_PRETRAINED_BERT_CACHE), 'distributed')
     model = CLIP4Clip.from_pretrained(args.cross_model, cache_dir=cache_dir, state_dict=model_state_dict, task_config=args)
-    
-    # model = load_model(1, args, n_gpu, device, model_file=args.init_model)
 
     model.to(device)
 
@@ -223,16 +221,16 @@ def save_model(epoch, args, model, optimizer, tr_loss, type_name=""):
     model_to_save = model.module if hasattr(model, 'module') else model
     output_model_file = os.path.join(
         args.output_dir, "pytorch_model.bin.{}{}".format("" if type_name=="" else type_name+".", epoch))
-    output_model_file_2 = os.path.join(
-        args.output_dir, "model.pt.{}{}".format("" if type_name=="" else type_name+".", epoch))
+    optimizer_state_file = os.path.join(
+        args.output_dir, "pytorch_opt.bin.{}{}".format("" if type_name=="" else type_name+".", epoch))
     torch.save(model_to_save.state_dict(), output_model_file)
     torch.save({
             'epoch': epoch,
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': tr_loss,
-            }, output_model_file_2)
+            }, optimizer_state_file)
     logger.info("Model saved to %s", output_model_file)
-    logger.info("Optimizer saved to %s", output_model_file_2)
+    logger.info("Optimizer saved to %s", optimizer_state_file)
     return output_model_file
 
 def load_model(epoch, args, n_gpu, device, model_file=None):
@@ -541,26 +539,24 @@ def main():
 
         best_score = 0.00001
         best_output_model_file = "None"
-        ############################################
-        loaded_epoch = 0
+        ## ##############################################################
+        # resume optimizer state besides loss to continue train
+        ## ##############################################################
+        resumed_epoch = 0
         if args.resume_model:
             checkpoint = torch.load(args.resume_model, map_location='cpu')
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            loaded_epoch = checkpoint['epoch']+1
-            loaded_loss = checkpoint['loss']
-        
-        ######################################
+            resumed_epoch = checkpoint['epoch']+1
+            resumed_loss = checkpoint['loss']
         
         global_step = 0
-        for epoch in range(loaded_epoch, args.epochs):
+        for epoch in range(resumed_epoch, args.epochs):
             train_sampler.set_epoch(epoch)
             tr_loss, global_step = train_epoch(epoch, args, model, train_dataloader, device, n_gpu, optimizer,
                                                scheduler, global_step, local_rank=args.local_rank)
             if args.local_rank == 0:
                 logger.info("Epoch %d/%s Finished, Train Loss: %f", epoch + 1, args.epochs, tr_loss)
 
-                output_model_file = None
-                ## Uncomment if want to save checkpoint
                 output_model_file = save_model(epoch, args, model, optimizer, tr_loss, type_name="")
 
                 ## Run on val dataset, this process is *TIME-consuming*.
