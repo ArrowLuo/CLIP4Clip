@@ -29,6 +29,11 @@ For the convenience, you can also download the splits and captions by,
 wget https://github.com/ArrowLuo/CLIP4Clip/releases/download/v0.0/msrvtt_data.zip
 ```
 
+Besides, the raw videos can be found in [sharing](https://github.com/m-bain/frozen-in-time#-finetuning-benchmarks-msr-vtt) from *Frozen️ in Time*, i.e.,
+```sh
+wget https://www.robots.ox.ac.uk/~maxbain/frozen-in-time/data/MSRVTT.zip
+```
+
 **For MSVD**
 
 Raw videos can be download from [link](https://www.cs.utexas.edu/users/ml/clamp/videoDescription/). 
@@ -43,9 +48,14 @@ wget https://github.com/ArrowLuo/CLIP4Clip/releases/download/v0.0/msvd_data.zip
 You must obtain permission from MPII to download and use the data. The download link is [here](https://sites.google.com/site/describingmovies/download).
 The 1000 test clips data is [link](http://www.google.com/url?q=http%3A%2F%2Fdatasets.d2.mpi-inf.mpg.de%2FmovieDescription%2Fprotected%2Flsmdc2016%2FLSMDC16_challenge_1000_publictect.csv&sa=D&sntz=1&usg=AFQjCNGIaGVhCeb6zNfUs2UL1zNzoEtaSg). Read our paper and the [dataloader](./dataloaders/dataloader_lsmdc_retrieval.py) for more information.
 
+**For ActivityNet**
+
+The official websit has made the full dataset available on Google and Baidu drives, see more information at [here](http://activity-net.org/download.html) . The splits can be found in the job [collaborative-experts](https://github.com/albanie/collaborative-experts/tree/master/misc/datasets/activity-net).
+
 **For DiDeMo**
 
 Raw videos can be download from [LisaAnne/LocalizingMoments](https://github.com/LisaAnne/LocalizingMoments). The splits can be found in the job [collaborative-experts](https://github.com/albanie/collaborative-experts/tree/master/misc/datasets/didemo/README.md).
+
 
 ## Compress Video for Speed-up (optional)
 ```sh
@@ -62,6 +72,8 @@ This script will compress the video to *3fps* with width *224* (or height *224*)
 > `--sim_header` can be set with `meanP`, `seqLSTM`, `seqTransf`, or `tightTransf`
 > 
 > `--pretrained_clip_name` can be set with `ViT-B/32` or `ViT-B/16`
+> 
+> `--resume_model` can be used to reload the saved optimizer state to continuely train the model, **Note**: need to set the corresponding chechpoint via `--init_model` simultaneously. 
 
 read our paper for more details on `--linear_patch` and `--sim_header`. Test more hyperparameters for better performance. 
 
