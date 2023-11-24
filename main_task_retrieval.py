@@ -265,8 +265,6 @@ def train_epoch(epoch, args, model, train_dataloader, device, n_gpu, optimizer, 
         input_ids, input_mask, segment_ids, video, video_mask = batch
         loss = model(input_ids, segment_ids, input_mask, video, video_mask)
 
-        if n_gpu > 1:
-            loss = loss.mean()  # mean() to average on multi-gpu.
         if args.gradient_accumulation_steps > 1:
             loss = loss / args.gradient_accumulation_steps
 
