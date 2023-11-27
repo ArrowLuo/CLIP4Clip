@@ -8,6 +8,7 @@ import torch
 from torch import nn
 
 from modules.until_module import PreTrainedModel, AllGather, CrossEn
+from torch.distributed import all_gather
 from modules.module_cross import CrossModel, CrossConfig, Transformer as TransformerClip
 
 from modules.module_clip import CLIP, convert_weights
@@ -400,9 +401,14 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
 
         # https://github.com/openai/CLIP/issues/132
         if self.training:
-            all_visual_output = allgather(visual_output, self.task_config)
-            all_sequence_output = allgather(sequence_output, self.task_config)
+            all_visual_output = [torch.empty_like(visual_output) for _ in range(self.task_config.world_size)]
+            all_gather(all_visual_output, visual_output)
+            all_visual_output = torch.cat(all_visual_output, dim=0)
+            all_sequence_output = [torch.empty_like(sequence_output) for _ in range(self.task_config.world_size)]
+            all_gather(all_sequence_output, sequence_output)
+            all_sequence_output = torch.cat(all_sequence_output, dim=0)
             torch.distributed.barrier()
+
             retrieve_logits1 = logit_scale * torch.matmul(sequence_output, all_visual_output.t())
             retrieve_logits2 = logit_scale * torch.matmul(visual_output, all_sequence_output.t())
             return [retrieve_logits1, retrieve_logits2]
